@@ -1,13 +1,13 @@
 {
-  "name": "nativescript-code-push",
-  "version": "1.0.1",
-  "description": "Use Microsoft CodePush to hot deploy updates to your app. More info: https://microsoft.github.io/code-push/",
+  "name": "@synerty/peek-ns-update",
+  "version": "0.5.0",
+  "description": "Allows the Peek platform to deploy content to the Nativescript apps",
   "main": "code-push",
   "typings": "index.d.ts",
   "nativescript": {
     "platforms": {
-      "android": "2.5.0",
-      "ios": "2.5.0"
+      "android": "3.0.0",
+      "ios": "3.0.0"
     },
     "hooks": [
       {
@@ -38,35 +38,32 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/eddyverbruggen/nativescript-code-push.git"
+    "url": "git+https://github.com/Synerty/peek-ns-update.git"
   },
   "keywords": [
-    "ecosystem:nativescript",
+    "ecosystem:peek",
     "NativeScript",
-    "CodePush",
-    "Code Push",
-    "Hot deploy",
-    "App update"
+    "Peek Platform",
+    "Peek",
+    "Synerty Peek"
   ],
   "author": {
-    "name": "Eddy Verbruggen",
-    "email": "eddyverbruggen@gmail.com"
+    "name": "Synerty",
+    "email": "contact@synerty.com"
   },
   "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/eddyverbruggen/nativescript-code-push/issues"
-  },
-  "homepage": "https://github.com/eddyverbruggen/nativescript-code-push",
+  "homepage": "https://synerty-peek.rtfd.io",
   "readmeFilename": "README.md",
   "dependencies": {
-    "nativescript-appversion": "1.4.1",
+    "@angular/core":">=4.0.0",
+    "nativescript-appversion": "^1.4.1",
     "nativescript-hook": "^0.2.1",
     "nativescript-zip": "git+https://github.com/EddyVerbruggen/nativescript-zip.git#330fa2d"
   },
   "devDependencies": {
-    "tns-core-modules": "^2.5.0",
-    "tns-platform-declarations": "^2.5.0",
+    "tns-core-modules": "^3.0.0",
+    "tns-platform-declarations": "^3.0.0",
     "tslint": "^5.1.0",
-    "typescript": "^2.1.0"
+    "typescript": "^2.3.4"
   }
 }
