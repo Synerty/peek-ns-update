@@ -107,19 +107,19 @@ export class TNSLocalPackage implements ILocalPackage {
                 //noinspection JSIgnoredPromiseFromCall (removal is async, don't really care if it fails)
                 fs.File.fromPath(this.localPath).remove();
 
-                // TODO this is hardcoded for now as we only support 'install on restart' currently
+                new TNSAcquisitionManager(this.deploymentKey).reportStatusDownload(this);
                 return InstallMode.ON_NEXT_RESTART;
             })
             .catch((e: string) => {
                 new TNSAcquisitionManager(this.deploymentKey).reportStatusDeploy(this, "DeploymentFailed");
-                throw new Error(error);
+                throw new Error(e);
             })
     }
 
     static unzip(archive: string, destination: string,
                  installProgressEvent: EventEmitter<null | number>): Promise<void> {
-        return new Promise((resolve, reject) => {
-            if (isIOS) {
+        if (isIOS) {
+            return new Promise<void>((resolve, reject) => {
                 TNSCodePush.unzipFileAtPathToDestinationOnProgressOnComplete(
                     archive,
                     destination,
@@ -133,13 +133,13 @@ export class TNSLocalPackage implements ILocalPackage {
                         reject(error ? error.localizedDescription : null);
                     }
                 );
-            } else {
-                return Zip.unzipWithProgress(
-                    archive, destination,
-                    progress => installProgressEvent.emit(progress)
-                );
-            }
-        });
+            });
+        } else {
+            return Zip.unzipWithProgress(
+                archive, destination,
+                progress => installProgressEvent.emit(progress)
+            );
+        }
     }
 
     static clean(): void {

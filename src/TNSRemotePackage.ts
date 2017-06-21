@@ -1,9 +1,8 @@
 import * as http from "http";
 import * as fs from "file-system";
 import {TNSLocalPackage} from "./TNSLocalPackage";
-import {TNSAcquisitionManager} from "./TNSAcquisitionManager";
 import {EventEmitter} from "@angular/core";
-import {DownloadProgress, ILocalPackage} from "./code-push-lib";
+import {DownloadProgress, ILocalPackage, IRemotePackage} from "./code-push-lib";
 
 export class TNSRemotePackage implements IRemotePackage {
     downloadUrl: string;

@@ -1,4 +1,3 @@
-/// <reference path="./code-push-lib.d.ts"/>
 
 import {device} from "platform";
 import * as appSettings from "application-settings";
@@ -7,7 +6,17 @@ import {TNSRemotePackage} from "./TNSRemotePackage";
 import {TNSLocalPackage} from "./TNSLocalPackage";
 import {TNSAcquisitionManager} from "./TNSAcquisitionManager";
 import {EventEmitter} from "@angular/core";
-import {IRemotePackage} from "./code-push-lib";
+import {
+    Configuration,
+    DownloadProgress,
+    ILocalPackage,
+    InstallMode,
+    IPackage,
+    IRemotePackage,
+    NativeUpdateNotification,
+    SyncOptions,
+    SyncStatus
+} from "./code-push-lib";
 
 
 export class CodePush {
@@ -23,6 +32,9 @@ export class CodePush {
     installProgressEvent = new EventEmitter<null | number>();
     syncStatusEvent = new EventEmitter<null | SyncStatus>();
 
+    private remotePackage: IRemotePackage | null = null;
+    private localPackage: ILocalPackage | null = null;
+
 
     sync(options: SyncOptions): Promise<SyncStatus> {
         // if (!options || !options.deploymentKey) {
@@ -37,18 +49,24 @@ export class CodePush {
 
         CodePush.syncInProgress = true;
 
-        CodePush.cleanPackagesIfNeeded();
+        this.cleanPackagesIfNeeded();
 
-        CodePush.notifyApplicationReady(options.deploymentKey);
+        this.notifyApplicationReady(options.deploymentKey);
 
         this.syncStatusEvent.emit(SyncStatus.CHECKING_FOR_UPDATE);
 
-        return CodePush.checkForUpdate(options.deploymentKey)
+        // Cast this to any now as we convert the return types in the chaining.
+        let updatePromise: any = this.checkForUpdate(options.deploymentKey);
+
+        return updatePromise
+
+        // SUCCESS for Check For Update
+        // Next, download it
             .then((remotePackage?: IRemotePackage) => {
                 if (!remotePackage) {
                     this.syncStatusEvent.emit(SyncStatus.UP_TO_DATE);
                     CodePush.syncInProgress = false;
-                    return;
+                    return Promise.resolve(SyncStatus.UP_TO_DATE);
                 }
 
                 if (options.ignoreFailedUpdates === undefined) {
@@ -60,21 +78,27 @@ export class CodePush {
                     console.log("An update is available, but it is being ignored due to have been previously rolled back.");
                     this.syncStatusEvent.emit(SyncStatus.UP_TO_DATE);
                     CodePush.syncInProgress = false;
-                    return;
+                    return Promise.resolve(SyncStatus.UP_TO_DATE);
                 }
 
                 this.syncStatusEvent.emit(SyncStatus.DOWNLOADING_PACKAGE);
 
+                this.remotePackage = remotePackage;
                 return remotePackage.download(this.downloadProgressEvent);
 
             })
-            // We've checked for an update, now we should download it.
+
+            // SUCCESS for Download
+            // Next, Install it
             .then((localPackage: ILocalPackage) => {
 
                 this.syncStatusEvent.emit(SyncStatus.INSTALLING_UPDATE);
-                return localPackage.install(this.installProgressEvent);
+                this.localPackage = localPackage;
+                return localPackage.installWithPromise(this.installProgressEvent);
             })
-            // The INSTALL was a success
+
+            // SUCCESS for Install
+            // Next, Finish off and return the sync status
             .then((appliedWhen: InstallMode) => {
                 // TODO the next action depends on the SyncOptions (but it's hardcoded to ON_NEXT_RESTART currently)
                 switch (appliedWhen) {
@@ -87,11 +111,12 @@ export class CodePush {
                         break;
                 }
 
-                appSettings.setString(CodePush.PENDING_HASH_KEY, remotePackage.packageHash);
-                appSettings.setString(CodePush.CURRENT_HASH_KEY, remotePackage.packageHash);
+                appSettings.setString(CodePush.PENDING_HASH_KEY, this.remotePackage.packageHash);
+                appSettings.setString(CodePush.CURRENT_HASH_KEY, this.remotePackage.packageHash);
 
                 this.syncStatusEvent.emit(SyncStatus.UPDATE_INSTALLED);
                 CodePush.syncInProgress = false;
+                return SyncStatus.UPDATE_INSTALLED;
             })
             .catch((error: string) => {
                 console.log(error);
@@ -99,54 +124,50 @@ export class CodePush {
                 CodePush.syncInProgress = false;
             });
 
-        // JJC new TNSAcquisitionManager(this.deploymentKey).reportStatusDownload(tnsLocalPackage);
-
     }
 
-    static checkForUpdate(deploymentKey: string): Promise<IRemotePackage> {
-        return new Promise((resolve, reject) => {
-            const config: Configuration = {
-                serverUrl: "https://codepush.azurewebsites.net/",
-                appVersion: AppVersion.getVersionNameSync(),
-                clientUniqueId: device.uuid,
-                deploymentKey: deploymentKey
-            };
+    private checkForUpdate(deploymentKey: string): Promise<IRemotePackage> {
+        const config: Configuration = {
+            serverUrl: "https://codepush.azurewebsites.net/",
+            appVersion: AppVersion.getVersionNameSync(),
+            clientUniqueId: device.uuid,
+            deploymentKey: deploymentKey
+        };
 
-            CodePush.getCurrentPackage(config).then((queryPackage?: IPackage) => {
-                new TNSAcquisitionManager(deploymentKey).queryUpdateWithCurrentPackage(queryPackage, (error: Error, result: IRemotePackage | NativeUpdateNotification) => {
-                    if (error) {
-                        reject(error.message || error.toString());
-                    }
+        return this.getCurrentPackage(config)
+            .then((queryPackage?: IPackage) => {
+                return new TNSAcquisitionManager(deploymentKey)
+                    .queryUpdateWithCurrentPackage(queryPackage);
+            })
+            .then((result: IRemotePackage | NativeUpdateNotification) => {
 
-                    if (!result || (<NativeUpdateNotification>result).updateAppVersion) {
-                        resolve(null);
-                        return;
-                    }
+                if (!result || (<NativeUpdateNotification>result).updateAppVersion) {
+                    return null;
+                }
 
-                    // At this point we know there's an update available for the current version
-                    const remotePackage: IRemotePackage = <IRemotePackage>result;
+                // At this point we know there's an update available for the current version
+                const remotePackage: IRemotePackage = <IRemotePackage>result;
 
-                    let tnsRemotePackage: IRemotePackage = new TNSRemotePackage();
-                    tnsRemotePackage.description = remotePackage.description;
-                    tnsRemotePackage.label = remotePackage.label;
-                    tnsRemotePackage.appVersion = remotePackage.appVersion;
-                    tnsRemotePackage.isMandatory = remotePackage.isMandatory;
-                    tnsRemotePackage.packageHash = remotePackage.packageHash;
-                    tnsRemotePackage.packageSize = remotePackage.packageSize;
-                    tnsRemotePackage.downloadUrl = remotePackage.downloadUrl;
-                    // the server doesn't send back the deploymentKey
-                    tnsRemotePackage.deploymentKey = config.deploymentKey;
-                    // TODO (low prio) see https://github.com/Microsoft/cordova-plugin-code-push/blob/055d9e625d47d56e707d9624c9a14a37736516bb/www/codePush.ts#L182
-                    // .. or https://github.com/Microsoft/react-native-code-push/blob/2cd2ef0ca2e27a95f84579603c2d222188bb9ce5/CodePush.js#L84
-                    tnsRemotePackage.failedInstall = false;
+                let tnsRemotePackage: IRemotePackage = new TNSRemotePackage();
+                tnsRemotePackage.description = remotePackage.description;
+                tnsRemotePackage.label = remotePackage.label;
+                tnsRemotePackage.appVersion = remotePackage.appVersion;
+                tnsRemotePackage.isMandatory = remotePackage.isMandatory;
+                tnsRemotePackage.packageHash = remotePackage.packageHash;
+                tnsRemotePackage.packageSize = remotePackage.packageSize;
+                tnsRemotePackage.downloadUrl = remotePackage.downloadUrl;
+                // the server doesn't send back the deploymentKey
+                tnsRemotePackage.deploymentKey = config.deploymentKey;
+                // TODO (low prio) see https://github.com/Microsoft/cordova-plugin-code-push/blob/055d9e625d47d56e707d9624c9a14a37736516bb/www/codePush.ts#L182
+                // .. or https://github.com/Microsoft/react-native-code-push/blob/2cd2ef0ca2e27a95f84579603c2d222188bb9ce5/CodePush.js#L84
+                tnsRemotePackage.failedInstall = false;
 
-                    resolve(tnsRemotePackage);
-                });
+                return tnsRemotePackage;
             });
-        });
+
     }
 
-    static getCurrentPackage(config: Configuration): Promise<IPackage> {
+    private getCurrentPackage(config: Configuration): Promise<IPackage> {
         return new Promise((resolve, reject) => {
             resolve({
                 appVersion: config.appVersion,
@@ -161,7 +182,7 @@ export class CodePush {
         });
     }
 
-    private static cleanPackagesIfNeeded(): void {
+    private cleanPackagesIfNeeded(): void {
         const shouldClean = appSettings.getBoolean(CodePush.CLEAN_KEY, false);
         if (!shouldClean) {
             return;
@@ -171,7 +192,7 @@ export class CodePush {
         TNSLocalPackage.clean();
     }
 
-    static notifyApplicationReady(deploymentKey: string): void {
+    private notifyApplicationReady(deploymentKey: string): void {
         if (CodePush.isBinaryFirstRun()) {
             // first run of a binary from the AppStore
             CodePush.markBinaryAsFirstRun();
