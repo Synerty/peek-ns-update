@@ -1,6 +1,6 @@
 {
-  "name": "@synerty/peek-ns-update",
-  "version": "0.5.0",
+  "name": "nativescript-peek-update",
+  "version": "0.0.1",
   "description": "Allows the Peek platform to deploy content to the Nativescript apps",
   "main": "code-push",
   "typings": "index.d.ts",
