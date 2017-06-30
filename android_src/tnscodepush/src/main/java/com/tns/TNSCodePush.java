@@ -68,6 +68,8 @@ public class TNSCodePush {
     }
 
     private static String getCurrentPackagePath(final Context context) {
+        return context.getFilesDir().getPath() + "/CodePush/pending/app";
+        /*
         final String currentHash = getCurrentHash(context);
         System.out.println("--- currentHash: " + currentHash);
 
@@ -97,6 +99,7 @@ public class TNSCodePush {
             removeCurrentHash(context);
             return null;
         }
+        */
     }
 
     private static String getApkBuildTime(Context context) {
@@ -148,41 +151,6 @@ public class TNSCodePush {
 
     private static SharedPreferences getPreferences(final Context context) {
         return context.getSharedPreferences(TNS_PREFERENCES_DB, Context.MODE_PRIVATE);
-    }
-
-    public static void copyDirectoryContents(String sourceDirectoryPath, String destinationDirectoryPath) throws IOException {
-        File sourceDir = new File(sourceDirectoryPath);
-        File destDir = new File(destinationDirectoryPath);
-        if (!destDir.exists()) {
-            destDir.mkdir();
-        }
-
-        for (File sourceFile : sourceDir.listFiles()) {
-            if (sourceFile.isDirectory()) {
-                copyDirectoryContents(
-                        appendPathComponent(sourceDirectoryPath, sourceFile.getName()),
-                        appendPathComponent(destinationDirectoryPath, sourceFile.getName()));
-            } else {
-                File destFile = new File(destDir, sourceFile.getName());
-                FileInputStream fromFileStream = null;
-                BufferedInputStream fromBufferedStream = null;
-                FileOutputStream destStream = null;
-                byte[] buffer = new byte[WRITE_BUFFER_SIZE];
-                try {
-                    fromFileStream = new FileInputStream(sourceFile);
-                    fromBufferedStream = new BufferedInputStream(fromFileStream);
-                    destStream = new FileOutputStream(destFile);
-                    int bytesRead;
-                    while ((bytesRead = fromBufferedStream.read(buffer)) > 0) {
-                        destStream.write(buffer, 0, bytesRead);
-                    }
-                } finally {
-                    if (fromFileStream != null) fromFileStream.close();
-                    if (fromBufferedStream != null) fromBufferedStream.close();
-                    if (destStream != null) destStream.close();
-                }
-            }
-        }
     }
 
     private static String appendPathComponent(String basePath, String appendPathComponent) {
