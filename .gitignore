@@ -24,3 +24,6 @@ publish/src
 publish/package
 
 node_modules
+
+.gradle
+android_src/build

@@ -1,6 +1,6 @@
 {
   "name": "nativescript-peek-update",
-  "version": "0.0.5",
+  "version": "0.0.7",
   "description": "Allows the Peek platform to deploy content to the Nativescript apps",
   "main": "code-push",
   "typings": "index.d.ts",

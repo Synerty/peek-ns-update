@@ -25,12 +25,16 @@ public class TNSCodePush {
     // if CodePush/pending/app path exists, rename it to /app
     static void activatePackage(final Context context) {
         final String pendingPackagePath = getCurrentPackagePath(context);
+        System.out.println("TNSCodePush: Activating Package");
+
         if (pendingPackagePath == null) {
+            System.out.println("TNSCodePush: pendingPackagePath == null");
             return;
         }
 
         final File pendingPackage = new File(pendingPackagePath);
         if (!pendingPackage.exists()) {
+            System.out.println("TNSCodePush: !pendingPackage.exists()");
             return;
         }
 
@@ -46,8 +50,10 @@ public class TNSCodePush {
         // move /app to /app_backup
         final File appFolder = new File(context.getFilesDir().getPath() + "/app");
 
+        System.out.println("TNSCodePush: Renaming /app -> /app_backup");
         if (appFolder.renameTo(appBackupFolder)) {
             // move pending to /app
+            System.out.println("TNSCodePush: Renaming pending/app -> /app");
             if (pendingPackage.renameTo(appFolder)) {
                 // as long as the app wasn't restarted after a code push update, this key would exist to control JS behavior
                 removePendingHash(context);
