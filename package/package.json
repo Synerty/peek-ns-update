@@ -1,0 +1,69 @@
+{
+  "name": "nativescript-peek-update",
+  "version": "0.0.2",
+  "description": "Allows the Peek platform to deploy content to the Nativescript apps",
+  "main": "code-push",
+  "typings": "index.d.ts",
+  "nativescript": {
+    "platforms": {
+      "android": "3.0.0",
+      "ios": "3.0.0"
+    },
+    "hooks": [
+      {
+        "type": "before-prepare",
+        "script": "scripts/ios/codepushify-ios.js"
+      },
+      {
+        "type": "after-prepare",
+        "script": "scripts/android/codepushify-android.js"
+      }
+    ]
+  },
+  "scripts": {
+    "build": "tsc",
+    "demo.ios": "npm run preparedemo && cd ../demo && tns platform remove ios && tns run ios --emulator",
+    "demo.ios.device": "npm run preparedemo && cd ../demo && tns platform remove ios && tns run ios",
+    "demo.android": "npm run preparedemo && cd ../demo && tns platform remove android && tns run android --justlaunch",
+    "preparedemo": "npm run build && cd ../demo && tns plugin remove nativescript-code-push && tns plugin add ../src && tns install",
+    "disabled-prepublish": "npm run build",
+    "setup": "npm i && cd ../demo && npm i && cd ../src && npm run build",
+    "tslint": "tslint *.ts",
+    "tslint.demo": "tslint ../demo/app/*.ts",
+    "test": "npm run build && npm run tslint && npm run tslint.demo && cd ../demo && tns build android",
+    "test.android": "npm run build && npm run tslint && npm run tslint.demo && cd ../demo && tns test android",
+    "test.ios": "npm run build && npm run tslint && npm run tslint.demo && cd ../demo && tns test ios",
+    "development.setup": "npm run setup && npm link && cd ../demo && npm link nativescript-code-push && cd ../src",
+    "postinstall": "node install-hooks.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Synerty/peek-ns-update.git"
+  },
+  "keywords": [
+    "ecosystem:peek",
+    "NativeScript",
+    "Peek Platform",
+    "Peek",
+    "Synerty Peek"
+  ],
+  "author": {
+    "name": "Synerty",
+    "email": "contact@synerty.com"
+  },
+  "license": "MIT",
+  "homepage": "https://synerty-peek.rtfd.io",
+  "readmeFilename": "README.md",
+  "dependencies": {
+    "@angular/core": ">=4.0.0",
+    "nativescript-appversion": "^1.4.1",
+    "nativescript-hook": "^0.2.1",
+    "nativescript-zip": "git+https://github.com/EddyVerbruggen/nativescript-zip.git#330fa2d"
+  },
+  "devDependencies": {
+    "tns-core-modules": "^3.0.0",
+    "tns-platform-declarations": "^3.0.0",
+    "tslint": "^5.1.0",
+    "typescript": "^2.3.4"
+  }
+}
