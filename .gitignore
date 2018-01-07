@@ -12,7 +12,7 @@ src/*.d.ts
 !src/references.d.ts
 !src/code-push-lib.d.ts
 
-**/*.xcuserdatad
+xcuserdata
 
 demo/app/*.js
 !demo/karma.conf.js
