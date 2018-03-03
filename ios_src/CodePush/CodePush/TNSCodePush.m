@@ -28,7 +28,8 @@
   NSString* appStoreAppBuildTime = timestamp.stringValue;
 
   BOOL codePushpPackageIsNewerThanAppStoreVersion =
-  [codePushAppBuildTime isEqualToString: appStoreAppBuildTime] && [codePushAppVersion isEqualToString: appStoreAppVersion];
+    [codePushAppBuildTime isEqualToString: appStoreAppBuildTime]
+    && [codePushAppVersion isEqualToString: appStoreAppVersion];
 
   if (codePushpPackageIsNewerThanAppStoreVersion) {
     NSString* docPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject];

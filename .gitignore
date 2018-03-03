@@ -12,6 +12,9 @@ src/*.d.ts
 !src/references.d.ts
 !src/code-push-lib.d.ts
 
+test-app/platforms
+test-app/node_modules
+
 xcuserdata
 
 demo/app/*.js
