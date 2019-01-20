@@ -32,3 +32,4 @@ node_modules
 
 .gradle
 android_src/build
+.idea
